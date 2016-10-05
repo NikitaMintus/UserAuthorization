@@ -40,17 +40,17 @@ class AuthorizationAjaxRequest extends AjaxRequest
 
 
         if (empty($username)) {
-            $this->setFieldError("username", "Enter the username");
+            $this->setFieldError("username", "Enter the username", \Auth\User::isBlocked());
             return;
         }
 
         if (empty($password)) {
-            $this->setFieldError("password", "Enter the password");
+            $this->setFieldError("password", "Enter the password", \Auth\User::isBlocked());
             return;
         }
 
         if (empty($captcha)) {
-            $this->setFieldError("captcha", "Perform captcha");
+            $this->setFieldError("captcha", "Perform captcha", \Auth\User::isBlocked());
             return;
         }
 
@@ -58,7 +58,7 @@ class AuthorizationAjaxRequest extends AjaxRequest
 
         if(!($response['success']))
         {
-            $this->setFieldError("captcha", "You are spamer");
+            $this->setFieldError("captcha", "You are spamer", true);
             return;
         }
 
@@ -66,14 +66,14 @@ class AuthorizationAjaxRequest extends AjaxRequest
         $auth_result = $user->authorize($username, $password, $remember);
 
 
-        if (!$auth_result) {
-            $this->setFieldError("password", "Invalid username or password");
+        if (!$auth_result["authorized"]) {
+            $this->setFieldError("password", "Invalid username or password", \Auth\User::isBlocked());
             return;
         }
 
         $this->status = "ok";
         $this->setResponse("redirect", ".");
-        $this->message = sprintf("Hello, %s! Access granted.", $username);
+        $this->message = "Hello," . $username . "Id:" . $auth_result["id"] . "Last visit" . $auth_result["lastVisit"];
     }
 
     public function logout()
@@ -144,9 +144,9 @@ class AuthorizationAjaxRequest extends AjaxRequest
             $this->setFieldError("username", $e->getMessage());
             return;
         }
-        $user->authorize($username, $password1);
+        $auth_result = $user->authorize($username, $password1);
 
-        $this->message = sprintf("Hello, %s! Thank you for registration.", $username);
+        $this->message = "Hello," . $username . '\r\n' . " Id:" . $auth_result["id"] . '\r\n' . " Last visit" . $auth_result["lastVisit"];
         $this->setResponse("redirect", "/");
         $this->status = "ok";
     }

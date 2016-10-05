@@ -14,6 +14,7 @@ class AjaxRequest
     public $code;
     public $message;
     public $status;
+    public $block;
 
     public function __construct($request)
     {
@@ -48,11 +49,12 @@ class AjaxRequest
     }
 
 
-    public function setFieldError($name, $message = "")
+    public function setFieldError($name, $message = "", $block)
     {
         $this->status = "err";
         $this->code = $name;
         $this->message = $message;
+        $this->block = $block;
     }
 
 
@@ -63,6 +65,7 @@ class AjaxRequest
             "code" => $this->code,
             "message" => $this->message,
             "data" => $this->data,
+            "block" => $this->block,
         );
         return json_encode($this->json, ENT_NOQUOTES);
     }

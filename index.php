@@ -53,7 +53,7 @@ require_once 'classes/Auth.php';
             </label>
             <div class="g-recaptcha" data-sitekey="6LfbTAgUAAAAAG__T_5fZUMv-uqhsH6odtQjATDC"></div>
             <input type="hidden" name="act" value="login">
-            <button class="btn btn-large btn-primary" type="submit">Sign in</button>
+            <button class="btn btn-large btn-primary" id="js-btn-submit" type="submit">Sign in</button>
 
             <div class="alert alert-info" style="margin-top:15px;">
                 <p>Not have an account? <a href="/register.php">Register it.</a>

@@ -159,17 +159,23 @@
         validateByAjax: function($form, data) {
             if (data.status === 'ok') {
                 if (data.message !== undefined && data.message !== null) {
-                    // window.alert(data.message);
+                    window.alert(data.message);
                 }
                 if (data.redirect === true) {
                     if (data.url !== undefined && data.url !== null) {
                         window.location.href = data.url;
+
                     } else {
                         window.location.reload();
                     }
                 }
             } else if (data.status === 'err') {
                 var $mainErrorContainer = $form.find('.main-error');
+
+                if(data.block == true) {
+                   data.message += '</br>You are blocked on 3 minutes';
+                }
+
                 if (data.code === 'main') {
                     if ($mainErrorContainer !== null) {
                         $mainErrorContainer.html('<p class="error">' + data.message + '</p>');

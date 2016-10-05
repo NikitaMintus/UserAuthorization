@@ -23,6 +23,7 @@ class User
     private $db_pass = "";
 
     private $is_authorized = false;
+    private $is_blocked = false;
 
     public function __construct($username = null, $password = null)
     {
@@ -33,6 +34,14 @@ class User
     public function __destruct()
     {
         $this->db = null;
+    }
+
+    public static function isBlocked()
+    {
+        if (!empty($_SESSION["block"])) {
+            return true;
+        }
+        return false;
     }
 
     public static function isAuthorized()
@@ -70,19 +79,54 @@ class User
         return $row["salt"];
     }
 
-    public function checkCaptcha()
+    public function countAttempts()
     {
+        if(!isset($_SESSION['attempts']))
+        {
+            $_SESSION['attempts'] = 1;
+        }
+        else
+        {
+            if((++$_SESSION['attempts']) > 2)
+            {
+                if(! $this->blockUser())
+                {
+                    $_SESSION['block'] = time() + 180000;
+                }
+            }
 
+        }
+    }
+
+    public function blockUser()
+    {
+        if(isset($_SESSION['block']))
+        {
+            $blockTime = $_SESSION['block'];
+            $curTime = time();
+            if($curTime <= $blockTime)
+            {
+                return true;
+            }
+            else
+            {
+                unset($_SESSION['block']);
+                unset($_SESSION['attempts']);
+                return false;
+            }
+        }
     }
 
     public function authorize($username, $password, $remember=false)
     {
-        $query = "select id, username, email from users where
+        $query = "select id, username, email, lastVisit from users where
             username = :username and password = :password limit 1";
         $sth = $this->db->prepare($query);
         $salt = $this->getSalt($username);
 
         if (!$salt) {
+            $this->countAttempts();
+            $this->is_blocked = $this->blockUser();
             return false;
         }
 
@@ -96,17 +140,22 @@ class User
         $this->user = $sth->fetch();
 
         if (!$this->user) {
+            $this->countAttempts($username);
             $this->is_authorized = false;
+            $this->is_blocked = $this->blockUser();
         } else {
-            $this->is_authorized = true;
-            $lastVisit = date("Y-d-m H:i:s") . "";
-            $this->setLastVisit($username, $lastVisit);
-            $this->user_id = $this->user['id'];
-            $this->saveSession($remember);
-
+            if(! $this->blockUser())
+            {
+                $this->is_authorized = true;
+                $this->last_visit = $this->user['lastVisit'];
+                $lastVisit = date("Y-d-m H:i:s") . "";
+                $this->setLastVisit($username, $lastVisit);
+                $this->user_id = $this->user['id'];
+                $this->saveSession($remember);
+            }
         }
 
-        return $this->is_authorized;
+        return ["authorized" => $this->is_authorized, "id" => $this->user_id, "lastVisit" => $this->last_visit];
     }
 
     public function logout()
